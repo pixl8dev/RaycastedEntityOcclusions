@@ -1,6 +1,5 @@
-package games.cubi.raycastedEntityOcclusion;
+package games.cubi.raycastedEntityOcclusion.Snapshot;
 
-import games.cubi.raycastedEntityOcclusion.Snapshot.ChunkSnapshotManager;
 import org.bukkit.Material;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
