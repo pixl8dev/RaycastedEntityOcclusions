@@ -1,10 +1,9 @@
 package games.cubi.raycastedEntityOcclusion;
 
 
+import games.cubi.raycastedEntityOcclusion.Raycast.RaycastUtil;
 import org.bukkit.*;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockState;
-import org.bukkit.block.TileState;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -111,9 +110,9 @@ public class Engine {
                         else {
                             p.hideEntity(plugin, ent);
                             if (ent instanceof Player other && cfg.packetEventsPresent) {
-                                plugin.getLogger().info("Hiding player " + other.getName() + " from player " + p.getName());
-                                PacketEvents.showTabName(p, other);
-                                // Different file so that packetevents stuff is only imported if present
+
+                                //p.getPersistentDataContainer().set(plugin.key, );
+
                             }
                         }
                     }
