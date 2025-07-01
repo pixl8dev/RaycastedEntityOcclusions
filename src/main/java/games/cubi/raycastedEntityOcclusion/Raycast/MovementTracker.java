@@ -1,4 +1,4 @@
-package games.cubi.raycastedEntityOcclusion;
+package games.cubi.raycastedEntityOcclusion.Raycast;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;

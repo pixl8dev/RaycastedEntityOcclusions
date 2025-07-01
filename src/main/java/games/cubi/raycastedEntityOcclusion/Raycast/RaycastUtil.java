@@ -1,5 +1,6 @@
-package games.cubi.raycastedEntityOcclusion;
+package games.cubi.raycastedEntityOcclusion.Raycast;
 
+import games.cubi.raycastedEntityOcclusion.Snapshot.ChunkSnapshotManager;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
