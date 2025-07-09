@@ -4,6 +4,8 @@ package games.cubi.raycastedEntityOcclusion.Raycast;
 import games.cubi.raycastedEntityOcclusion.Snapshot.ChunkSnapshotManager;
 import games.cubi.raycastedEntityOcclusion.ConfigManager;
 import games.cubi.raycastedEntityOcclusion.RaycastedEntityOcclusion;
+import games.cubi.raycastedEntityOcclusion.PDC.PlayerHidingManager;
+
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
@@ -113,7 +115,7 @@ public class Engine {
                             p.hideEntity(plugin, ent);
                             if (ent instanceof Player other && cfg.packetEventsPresent) {
 
-                                //p.getPersistentDataContainer().set(plugin.key, );
+                                plugin.getPlayerHidingManager().markPlayerAsHidden(p, other);
 
                             }
                         }
@@ -151,8 +153,14 @@ public class Engine {
                         if (snapMgr.getMaterialAt(loc).equals(Material.BEACON)) continue;
 
                         double distSquared = loc.distanceSquared(p.getLocation());
-                        if (distSquared > cfg.searchRadius * cfg.searchRadius) hideTileEntity(p, loc);
-                        if (distSquared < cfg.alwaysShowRadius * cfg.alwaysShowRadius) showTileEntity(p, loc);
+                        if (distSquared > cfg.searchRadius * cfg.searchRadius) {
+                            hideTileEntity(p, loc);
+                            continue;
+                        }
+                        if (distSquared < cfg.alwaysShowRadius * cfg.alwaysShowRadius) {
+                            showTileEntity(p, loc);
+                            continue;
+                        }
 
                         boolean result = RaycastUtil.raycast(p.getEyeLocation(), loc, cfg.maxOccludingCount, cfg.debugMode, snapMgr);
                         if (cfg.engineMode == 2) {
