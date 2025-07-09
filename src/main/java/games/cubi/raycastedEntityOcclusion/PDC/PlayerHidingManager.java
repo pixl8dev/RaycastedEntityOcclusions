@@ -1,0 +1,42 @@
+package games.cubi.raycastedEntityOcclusion.PDC;
+
+import games.cubi.raycastedEntityOcclusion.RaycastedEntityOcclusion;
+import org.bukkit.NamespacedKey;
+import org.bukkit.entity.Player;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
+
+public class PlayerHidingManager {
+    private RaycastedEntityOcclusion plugin;
+    public PlayerHidingManager(RaycastedEntityOcclusion plugin) {
+        this.plugin = plugin;
+    }
+
+    public void markPlayerAsHidden(Player player, Player target) {
+        if (player == null || target == null) return;
+
+        player.getPersistentDataContainer().set(getKey(target), PersistentDataType.LONG, System.currentTimeMillis());
+        target.getPersistentDataContainer().set(getKey(player), PersistentDataType.LONG, System.currentTimeMillis());
+
+    }
+    public boolean wasPlayerHidden(Player player, Player target) {
+        if (player == null || target == null) return false;
+
+        PersistentDataContainer container = player.getPersistentDataContainer();
+        long time = -1;
+        if (container.has(getKey(target), PersistentDataType.LONG)) {
+            time = container.get(getKey(target), PersistentDataType.LONG);
+        }
+        player.getPersistentDataContainer().remove(getKey(target));
+        if (time == -1) return false;
+        if (System.currentTimeMillis() - time < 1000) {
+            return true;
+        }
+        return false;
+    }
+
+    private NamespacedKey getKey(Player p) {
+        return new NamespacedKey(plugin, p.getName());
+    }
+
+}

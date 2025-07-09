@@ -94,6 +94,5 @@ public class ConfigManager {
     }
     public void setPacketEventsPresent(boolean present) {
         this.packetEventsPresent = present;
-        plugin.getLogger().info("PacketEvents detected: " + present);
     }
 }
