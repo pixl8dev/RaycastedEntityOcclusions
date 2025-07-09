@@ -24,8 +24,9 @@ public class PlayerHidingManager {
 
         PersistentDataContainer container = player.getPersistentDataContainer();
         long time = -1;
-        if (container.has(getKey(target), PersistentDataType.LONG)) {
-            time = container.get(getKey(target), PersistentDataType.LONG);
+        NamespacedKey key = getKey(target);
+        if (container.has(key, PersistentDataType.LONG)) {
+            time = container.get(key, PersistentDataType.LONG);
         }
         player.getPersistentDataContainer().remove(getKey(target));
         if (time == -1) return false;
