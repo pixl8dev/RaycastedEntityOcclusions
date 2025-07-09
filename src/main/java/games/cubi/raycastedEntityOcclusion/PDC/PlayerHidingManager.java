@@ -14,9 +14,10 @@ public class PlayerHidingManager {
 
     public void markPlayerAsHidden(Player player, Player target) {
         if (player == null || target == null) return;
-
-        player.getPersistentDataContainer().set(getKey(target), PersistentDataType.LONG, System.currentTimeMillis());
-        target.getPersistentDataContainer().set(getKey(player), PersistentDataType.LONG, System.currentTimeMillis());
+        NamespacedKey key = getKey(target);
+        long time = System.currentTimeMillis();
+        player.getPersistentDataContainer().set(key, PersistentDataType.LONG, time);
+        target.getPersistentDataContainer().set(key, PersistentDataType.LONG, time);
 
     }
     public boolean wasPlayerHidden(Player player, Player target) {
