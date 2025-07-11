@@ -4,24 +4,16 @@ package games.cubi.raycastedEntityOcclusion;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import net.kyori.adventure.audience.Audience;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.URLConnection;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.util.concurrent.CompletableFuture;
 
 
@@ -33,8 +25,6 @@ public class UpdateChecker implements org.bukkit.event.Listener {
         checkForUpdates(plugin, Bukkit.getConsoleSender());
     }
 
-    public void checkForUpdates() {
-    }
 
     public static CompletableFuture<String> fetchFeaturedVersion(RaycastedEntityOcclusion plugin) {
         CompletableFuture<String> future = new CompletableFuture<>();
@@ -47,11 +37,7 @@ public class UpdateChecker implements org.bukkit.event.Listener {
                 array.add(new BufferedReader(reader).readLine());
                 StringBuilder sb = new StringBuilder();
                 for (int i = 0; i < array.size(); i++) {
-                    /*
-                    final JsonObject object = array.get(i).getAsJsonObject();
-                    if (object.get("version_type").getAsString().equals("release")) {
-                        future.complete(object.get("version_number").getAsString());
-                    }*/
+
                     sb.append(array.get(i).getAsString());
                 }
                 String apiData = sb.toString();
@@ -61,7 +47,6 @@ public class UpdateChecker implements org.bukkit.event.Listener {
 
                 future.complete(versionNumber);
 
-                //future.completeExceptionally(new IllegalStateException("No versions found"));
             } catch (IOException e) {
                 future.completeExceptionally(new IllegalStateException("Unable to fetch latest version", e));
             }
