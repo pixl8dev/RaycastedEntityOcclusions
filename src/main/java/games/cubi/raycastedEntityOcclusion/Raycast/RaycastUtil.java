@@ -6,9 +6,6 @@ import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.util.Vector;
 
-
-
-
 public class RaycastUtil {
     public static boolean raycast(Location start, Location end, int maxOccluding, boolean debug, ChunkSnapshotManager snap) {
         Particle.DustOptions dustRed = null;
@@ -28,7 +25,6 @@ public class RaycastUtil {
             if (mat == null) {
                 continue;
             }
-            //System.out.println(curr + " " + mat);
             if (mat.isOccluding()) {
                 maxOccluding--;
                 if (debug) {
