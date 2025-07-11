@@ -40,5 +40,5 @@ public class SnapshotListener implements Listener {
     public void onBurn(BlockBurnEvent e) {
         manager.onBlockChange(e.getBlock().getLocation(), Material.AIR);
     }
-    // These events do not cover all cases, but I can't be bothered to figure out a better solution rn. Frequent snapshot refreshes is the solution. If anyone has a solutioon please let me know.
+    // These events do not cover all cases, but I can't be bothered to figure out a better solution rn. Frequent snapshot refreshes is the solution. If anyone has a solution please let me know.
 }
