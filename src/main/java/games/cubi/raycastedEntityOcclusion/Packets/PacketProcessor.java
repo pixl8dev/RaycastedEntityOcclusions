@@ -15,12 +15,10 @@ import java.util.UUID;
 
 public class PacketProcessor {
     private final RaycastedEntityOcclusion plugin;
-    private final PlayerHidingManager playerHidingManager;
     private final UUID key;
 
     public PacketProcessor(RaycastedEntityOcclusion plugin) {
         this.plugin = plugin;
-        playerHidingManager = plugin.getPlayerHidingManager();
         key = UUID.randomUUID();
     }
 
