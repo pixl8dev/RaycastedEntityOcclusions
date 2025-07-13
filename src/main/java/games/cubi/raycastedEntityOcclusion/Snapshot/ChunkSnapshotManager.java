@@ -75,7 +75,7 @@ public class ChunkSnapshotManager {
         dataMap.remove(key(c));
     }
 
-    // Used by SnapshotListener to update the delta map when a block is placed or broken
+    // Used by EventListener to update the delta map when a block is placed or broken
     public void onBlockChange(Location loc, Material m) {
         if (cfg.debugMode) {
             Bukkit.getLogger().info("ChunkSnapshotManager: Block change at " + loc + " to " + m);

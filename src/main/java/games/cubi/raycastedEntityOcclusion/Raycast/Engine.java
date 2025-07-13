@@ -4,7 +4,6 @@ package games.cubi.raycastedEntityOcclusion.Raycast;
 import games.cubi.raycastedEntityOcclusion.Snapshot.ChunkSnapshotManager;
 import games.cubi.raycastedEntityOcclusion.ConfigManager;
 import games.cubi.raycastedEntityOcclusion.RaycastedEntityOcclusion;
-import games.cubi.raycastedEntityOcclusion.PDC.PlayerHidingManager;
 
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -113,11 +112,6 @@ public class Engine {
                         if (r.visible) p.showEntity(plugin, ent);
                         else {
                             p.hideEntity(plugin, ent);
-                            if (ent instanceof Player other && cfg.packetEventsPresent) {
-
-                                plugin.getPlayerHidingManager().markPlayerAsHidden(p, other);
-
-                            }
                         }
                     }
                 }
