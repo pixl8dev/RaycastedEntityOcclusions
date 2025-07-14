@@ -1,15 +1,12 @@
 package games.cubi.raycastedEntityOcclusion;
 
-import com.github.retrooper.packetevents.PacketEvents;
-import com.github.retrooper.packetevents.event.PacketListenerPriority;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import games.cubi.raycastedEntityOcclusion.Packets.PacketProcessor;
-import games.cubi.raycastedEntityOcclusion.Packets.PacketsListener;
+import games.cubi.raycastedEntityOcclusion.Packets.Registrar;
 import games.cubi.raycastedEntityOcclusion.Raycast.Engine;
 import games.cubi.raycastedEntityOcclusion.Raycast.MovementTracker;
 import games.cubi.raycastedEntityOcclusion.Snapshot.ChunkSnapshotManager;
-import games.cubi.raycastedEntityOcclusion.bStats.Metrics;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
@@ -26,7 +23,7 @@ public class RaycastedEntityOcclusion extends JavaPlugin implements CommandExecu
     private MovementTracker tracker;
     private CommandsManager commands;
     private boolean packetEventsPresent = false;
-    private PacketProcessor packetProcessor;
+    private PacketProcessor packetProcessor = null;
 
     public int tick = 0;
 
@@ -36,8 +33,7 @@ public class RaycastedEntityOcclusion extends JavaPlugin implements CommandExecu
         if (packetEvents != null) {
             packetEventsPresent = true;
             getLogger().info("PacketEvents detected.");
-            PacketEvents.getAPI().getEventManager().registerListener(
-                    new PacketsListener(this), PacketListenerPriority.NORMAL);
+            new Registrar(this);
 
         } else {
             getLogger().info("PacketEvents not detected, disabling packet-based tablist modification. Don't worry, the plugin will still work without it.");
@@ -50,10 +46,7 @@ public class RaycastedEntityOcclusion extends JavaPlugin implements CommandExecu
         snapMgr = new ChunkSnapshotManager(this);
         tracker = new MovementTracker(this);
         commands = new CommandsManager(this, cfg);
-        packetProcessor = new PacketProcessor(this);
-        getServer().getPluginManager().registerEvents(new EventListener(this, snapMgr, cfg, packetProcessor), this);
-        getServer().getPluginManager().registerEvents(new UpdateChecker(this), this);
-
+        getServer().getPluginManager().registerEvents(new EventListener(this, snapMgr, cfg), this);
         //Brigadier API
         LiteralCommandNode<CommandSourceStack> buildCommand = commands.registerCommand();
 
@@ -88,6 +81,7 @@ public class RaycastedEntityOcclusion extends JavaPlugin implements CommandExecu
             public void run() {
                 if (packetEventsPresent && Bukkit.getPluginManager().isPluginEnabled("packetevents")) {
                     cfg.setPacketEventsPresent(true);
+                    packetProcessor = new PacketProcessor(RaycastedEntityOcclusion.this);
                     getLogger().info("PacketEvents is enabled, enabling packet-based tablist modification.");
                 }
             }
