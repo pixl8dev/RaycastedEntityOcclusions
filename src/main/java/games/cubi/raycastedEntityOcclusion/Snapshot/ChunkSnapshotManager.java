@@ -1,10 +1,10 @@
-package games.cubi.raycastedEntityOcclusion;
+package games.cubi.raycastedEntityOcclusion.Snapshot;
 
+import games.cubi.raycastedEntityOcclusion.ConfigManager;
+import games.cubi.raycastedEntityOcclusion.RaycastedEntityOcclusion;
 import org.bukkit.*;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.TileState;
-import org.bukkit.block.data.BlockData;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.*;
@@ -16,6 +16,8 @@ public class ChunkSnapshotManager {
         public final Map<Location, Material> delta = new ConcurrentHashMap<>();
         public final Set<Location> tileEntities = ConcurrentHashMap.newKeySet();
         public long lastRefresh;
+        public int minHeight;
+        public int maxHeight;
 
         public Data(ChunkSnapshot snapshot, long time) {
             this.snapshot = snapshot;
@@ -73,7 +75,7 @@ public class ChunkSnapshotManager {
         dataMap.remove(key(c));
     }
 
-    // Used by SnapshotListener to update the delta map when a block is placed or broken
+    // Used by EventListener to update the delta map when a block is placed or broken
     public void onBlockChange(Location loc, Material m) {
         if (cfg.debugMode) {
             Bukkit.getLogger().info("ChunkSnapshotManager: Block change at " + loc + " to " + m);
@@ -84,7 +86,7 @@ public class ChunkSnapshotManager {
             if (cfg.checkTileEntities) {
                 // Check if the block is a tile entity
                 BlockState data = loc.getBlock().getState();
-                loc = loc.clone().add(0.5, 0, 0.5);
+                loc = loc.clone().add(0.5, 0.5, 0.5);
                 if (data instanceof TileState) {
                     if (cfg.debugMode){
                         Bukkit.getLogger().info("ChunkSnapshotManager: Tile entity at " + loc);
@@ -102,15 +104,19 @@ public class ChunkSnapshotManager {
         Data data = new Data(c.getChunkSnapshot(), now);
         int chunkX = c.getX() * 16;
         int chunkZ = c.getZ() * 16;
+        int minHeight = w.getMinHeight();
+        int maxHeight = w.getMaxHeight();
+        data.maxHeight = maxHeight;
+        data.minHeight = minHeight;
         if (cfg.checkTileEntities) {
             for (int x = 0; x < 16; x++) {
-                for (int y = w.getMinHeight(); y < w.getMaxHeight(); y++) {
+                for (int y = minHeight; y < maxHeight; y++) {
                     for (int z = 0; z < 16; z++) {
-                            BlockState bs = data.snapshot.getBlockData(x, y, z).createBlockState();
+                        BlockState bs = data.snapshot.getBlockData(x, y, z).createBlockState();
 
-                            if (bs instanceof TileState) {
-                                data.tileEntities.add(new Location(w, x+ chunkX +0.5, y, z + chunkZ+0.5));
-                            }
+                        if (bs instanceof TileState) {
+                            data.tileEntities.add(new Location(w, x+ chunkX +0.5, y+0.5, z + chunkZ+0.5));
+                        }
                     }
                 }
             }
@@ -127,8 +133,12 @@ public class ChunkSnapshotManager {
         if (d == null) {
             Chunk c = loc.getChunk();
             //dataMap.put(key(c), takeSnapshot(c, System.currentTimeMillis())); infinite loop
-            System.err.println("ChunkSnapshotManager: No snapshot for " + loc.getChunk()+ " Please report this on our discord (discord.cubi.games)'");
+            System.err.println("ChunkSnapshotManager: No snapshot for " + c+ " Please report this on our discord (discord.cubi.games)'");
             return loc.getBlock().getType();
+        }
+        double yLevel = loc.getY();
+        if (yLevel < d.minHeight || yLevel > d.maxHeight) {
+            return null;
         }
         Material dm = d.delta.get(loc);
         if (dm != null) {
@@ -137,6 +147,7 @@ public class ChunkSnapshotManager {
         int x = loc.getBlockX() & 0xF;
         int y = loc.getBlockY();
         int z = loc.getBlockZ() & 0xF;
+
         return d.snapshot.getBlockType(x, y, z);
     }
 

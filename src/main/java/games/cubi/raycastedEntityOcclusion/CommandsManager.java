@@ -1,15 +1,23 @@
 package games.cubi.raycastedEntityOcclusion;
 
 import com.mojang.brigadier.Command;
+import com.mojang.brigadier.arguments.ArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
+import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
+import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.entity.Player;
+
+import static org.bukkit.Bukkit.getPlayer;
+
 
 public class CommandsManager {
     private final RaycastedEntityOcclusion plugin;
@@ -78,13 +86,13 @@ public class CommandsManager {
                                         })
                                 )
                         )
-                )/*
+                )
                 .then(Commands.literal("test")
                         .executes(context -> {
                             testCommand(context);
                             return Command.SINGLE_SUCCESS;
                         })
-                )*/
+                )
                 .then(Commands.literal("check-for-updates")
                         .executes(context -> {
                             CommandSender sender = context.getSource().getSender();
@@ -106,11 +114,6 @@ public class CommandsManager {
         return Command.SINGLE_SUCCESS;
     }
 
-    private void testCommand(CommandContext<CommandSourceStack> context) {
-        CommandSender sender = context.getSource().getSender();
-        sender.sendRichMessage("This is a test command for use in development. It does nothing on publicly released versions (unless I have forgotten to remove the tests).");
-
-        //sender.sendMessage(new UpdateChecker(plugin).hasNewUpdate());
-        UpdateChecker.checkForUpdates(plugin, sender);
+    private void testCommand(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
     }
 }

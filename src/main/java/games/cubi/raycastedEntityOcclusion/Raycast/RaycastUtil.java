@@ -1,12 +1,10 @@
-package games.cubi.raycastedEntityOcclusion;
+package games.cubi.raycastedEntityOcclusion.Raycast;
 
+import games.cubi.raycastedEntityOcclusion.Snapshot.ChunkSnapshotManager;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.util.Vector;
-
-
-
 
 public class RaycastUtil {
     public static boolean raycast(Location start, Location end, int maxOccluding, boolean debug, ChunkSnapshotManager snap) {
@@ -24,7 +22,9 @@ public class RaycastUtil {
             curr.add(dir);
             traveled += 1;
             Material mat = snap.getMaterialAt(curr);
-            //System.out.println(curr + " " + mat);
+            if (mat == null) {
+                continue;
+            }
             if (mat.isOccluding()) {
                 maxOccluding--;
                 if (debug) {

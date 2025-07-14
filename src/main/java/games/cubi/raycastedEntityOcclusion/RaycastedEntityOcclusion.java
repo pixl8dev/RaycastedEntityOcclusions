@@ -1,30 +1,48 @@
 package games.cubi.raycastedEntityOcclusion;
 
+import com.github.retrooper.packetevents.PacketEvents;
+import com.github.retrooper.packetevents.event.PacketListenerPriority;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.tree.LiteralCommandNode;
+import games.cubi.raycastedEntityOcclusion.Packets.PacketProcessor;
+import games.cubi.raycastedEntityOcclusion.Packets.PacketsListener;
+import games.cubi.raycastedEntityOcclusion.Raycast.Engine;
+import games.cubi.raycastedEntityOcclusion.Raycast.MovementTracker;
+import games.cubi.raycastedEntityOcclusion.Snapshot.ChunkSnapshotManager;
+import games.cubi.raycastedEntityOcclusion.bStats.Metrics;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.Particle;
 import org.bukkit.command.CommandExecutor;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import games.cubi.raycastedEntityOcclusion.bStats.MetricsCollector;
 
 public class RaycastedEntityOcclusion extends JavaPlugin implements CommandExecutor {
     private ConfigManager cfg;
     private ChunkSnapshotManager snapMgr;
     private MovementTracker tracker;
     private CommandsManager commands;
+    private boolean packetEventsPresent = false;
+    private PacketProcessor packetProcessor;
 
     public int tick = 0;
+
+    @Override
+    public void onLoad() {
+        Plugin packetEvents = Bukkit.getPluginManager().getPlugin("packetevents");
+        if (packetEvents != null) {
+            packetEventsPresent = true;
+            getLogger().info("PacketEvents detected.");
+            PacketEvents.getAPI().getEventManager().registerListener(
+                    new PacketsListener(this), PacketListenerPriority.NORMAL);
+
+        } else {
+            getLogger().info("PacketEvents not detected, disabling packet-based tablist modification. Don't worry, the plugin will still work without it.");
+        }
+    }
 
     @Override
     public void onEnable() {
@@ -32,7 +50,8 @@ public class RaycastedEntityOcclusion extends JavaPlugin implements CommandExecu
         snapMgr = new ChunkSnapshotManager(this);
         tracker = new MovementTracker(this);
         commands = new CommandsManager(this, cfg);
-        getServer().getPluginManager().registerEvents(new SnapshotListener(snapMgr), this);
+        packetProcessor = new PacketProcessor(this);
+        getServer().getPluginManager().registerEvents(new EventListener(this, snapMgr, cfg, packetProcessor), this);
         getServer().getPluginManager().registerEvents(new UpdateChecker(this), this);
 
         //Brigadier API
@@ -51,9 +70,10 @@ public class RaycastedEntityOcclusion extends JavaPlugin implements CommandExecu
         });
 
         //bStats
-        int pluginId = 24553;
-        new Metrics(this, pluginId);
+        new MetricsCollector(this, cfg);
 
+
+        // TODO: Move this somewhere else, the main class should be cleaner
         new BukkitRunnable() {
             @Override
             public void run() {
@@ -62,9 +82,32 @@ public class RaycastedEntityOcclusion extends JavaPlugin implements CommandExecu
                 Engine.runTileEngine(cfg, snapMgr, tracker, RaycastedEntityOcclusion.this);
             }
         }.runTaskTimer(this, 0L, 1L);
+
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (packetEventsPresent && Bukkit.getPluginManager().isPluginEnabled("packetevents")) {
+                    cfg.setPacketEventsPresent(true);
+                    getLogger().info("PacketEvents is enabled, enabling packet-based tablist modification.");
+                }
+            }
+        }.runTaskLater(this, 1L);
     }
+
 
     public ConfigManager getConfigManager() {
         return cfg;
+    }
+    public ChunkSnapshotManager getChunkSnapshotManager() {
+        return snapMgr;
+    }
+    public MovementTracker getMovementTracker() {
+        return tracker;
+    }
+    public CommandsManager getCommandsManager() {
+        return commands;
+    }
+    public PacketProcessor getPacketProcessor() {
+        return packetProcessor;
     }
 }

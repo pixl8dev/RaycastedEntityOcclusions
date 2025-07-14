@@ -1,9 +1,12 @@
-package games.cubi.raycastedEntityOcclusion;
+package games.cubi.raycastedEntityOcclusion.Raycast;
+
+
+import games.cubi.raycastedEntityOcclusion.Snapshot.ChunkSnapshotManager;
+import games.cubi.raycastedEntityOcclusion.ConfigManager;
+import games.cubi.raycastedEntityOcclusion.RaycastedEntityOcclusion;
 
 import org.bukkit.*;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockState;
-import org.bukkit.block.TileState;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -16,12 +19,13 @@ public class Engine {
     public static ConcurrentHashMap<Location, Set<Player>> canSeeTileEntity = new ConcurrentHashMap<>();
 
     private static class RayJob {
-        final UUID playerId, entityId;
+        final Player player;
+        final Entity target;
         final Location start, predictedStart, end;
 
-        RayJob(UUID p, UUID e, Location s, Location pred, Location t) {
-            playerId = p;
-            entityId = e;
+        RayJob(Player p, Entity e, Location s, Location pred, Location t) {
+            player = p;
+            target = e;
             start = s;
             predictedStart = pred;
             end = t;
@@ -29,12 +33,13 @@ public class Engine {
     }
 
     private static class RayResult {
-        final UUID playerId, entityId;
+        final Player player;
+        final Entity target;
         final boolean visible;
 
-        RayResult(UUID p, UUID e, boolean v) {
-            playerId = p;
-            entityId = e;
+        RayResult(Player p, Entity e, boolean v) {
+            player = p;
+            target = e;
             visible = v;
         }
     }
@@ -69,7 +74,7 @@ public class Engine {
                     // player can see entity, no need to raycast
                 } else {
                     // schedule for async raycast (with or without predEye)
-                    jobs.add(new RayJob(p.getUniqueId(), e.getUniqueId(), eye, predEye, target));
+                    jobs.add(new RayJob(p, e, eye, predEye, target));
                 }
             }
         }
@@ -78,6 +83,10 @@ public class Engine {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             List<RayResult> results = new ArrayList<>(jobs.size());
             for (RayJob job : jobs) {
+                // if the player is not in the same world as the target, skip
+                if (!job.player.getWorld().equals(job.target.getWorld())) {
+                    continue;
+                }
                 // first cast from real eye
                 boolean vis = RaycastUtil.raycast(job.start, job.end, cfg.maxOccludingCount, cfg.debugMode, snapMgr);
 
@@ -89,17 +98,21 @@ public class Engine {
                     vis = RaycastUtil.raycast(job.predictedStart, job.end, cfg.maxOccludingCount, cfg.debugMode, snapMgr);
                 }
 
-                results.add(new RayResult(job.playerId, job.entityId, vis));
+                results.add(new RayResult(job.player, job.target, vis));
             }
 
             // ----- PHASE 3: SYNC APPLY -----
             Bukkit.getScheduler().runTask(plugin, () -> {
                 for (RayResult r : results) {
-                    Player p = Bukkit.getPlayer(r.playerId);
-                    Entity ent = Bukkit.getEntity(r.entityId);
+                    Player p = r.player;
+                    Entity ent = r.target;
                     if (p != null && ent != null) {
+                        boolean currentState = p.canSee(ent);
+                        if (currentState == r.visible) continue;
                         if (r.visible) p.showEntity(plugin, ent);
-                        else p.hideEntity(plugin, ent);
+                        else {
+                            p.hideEntity(plugin, ent);
+                        }
                     }
                 }
             });
@@ -112,12 +125,15 @@ public class Engine {
             for (Player p : Bukkit.getOnlinePlayers()) {
                 if (p.hasPermission("raycastedentityocclusions.bypass")) continue;
                 String world = p.getWorld().getName();
-                //async run with the world passed in
+                //get player's chunk location
+                int chunkX = p.getLocation().getBlockX() >> 4;
+                int chunkZ = p.getLocation().getBlockZ() >> 4;
+                //async run with vars passed in
                 Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
                     int chunksRadius = (cfg.searchRadius + 15) / 16;
                     HashSet<Location> tileEntities = new HashSet<>();
-                    for (int x = -chunksRadius; x <= chunksRadius; x++) {
-                        for (int z = -chunksRadius; z <= chunksRadius; z++) {
+                    for (int x = (-chunksRadius/2)+chunkX; x <= chunksRadius+chunkX; x++) {
+                        for (int z = (-chunksRadius/2)+chunkZ; z <= chunksRadius+chunkZ; z++) {
                             tileEntities.addAll(snapMgr.getTileEntitiesInChunk(world, x, z));
                         }
                     }
@@ -131,8 +147,14 @@ public class Engine {
                         if (snapMgr.getMaterialAt(loc).equals(Material.BEACON)) continue;
 
                         double distSquared = loc.distanceSquared(p.getLocation());
-                        if (distSquared > cfg.searchRadius * cfg.searchRadius) hideTileEntity(p, loc);
-                        if (distSquared < cfg.alwaysShowRadius * cfg.alwaysShowRadius) showTileEntity(p, loc);
+                        if (distSquared > cfg.searchRadius * cfg.searchRadius) {
+                            hideTileEntity(p, loc);
+                            continue;
+                        }
+                        if (distSquared < cfg.alwaysShowRadius * cfg.alwaysShowRadius) {
+                            showTileEntity(p, loc);
+                            continue;
+                        }
 
                         boolean result = RaycastUtil.raycast(p.getEyeLocation(), loc, cfg.maxOccludingCount, cfg.debugMode, snapMgr);
                         if (cfg.engineMode == 2) {

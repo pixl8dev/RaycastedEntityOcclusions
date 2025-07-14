@@ -2,7 +2,7 @@ name: RaycastedEntityOcclusions
 version: ${version}
 main: games.cubi.raycastedEntityOcclusion.RaycastedEntityOcclusion
 api-version: '1.21'
-prefix: EntityOcclusions
+prefix: REO
 authors: [ _Cubicake ]
 load: STARTUP
 website: https://cubi.games
@@ -16,3 +16,5 @@ permissions:
     raycastedentityocclusions.updatecheck:
         description: Permission to check for plugin updates
         default: op
+softdepend:
+    - packetevents

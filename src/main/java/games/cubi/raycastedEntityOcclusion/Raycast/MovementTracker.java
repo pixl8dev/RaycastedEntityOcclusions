@@ -1,4 +1,4 @@
-package games.cubi.raycastedEntityOcclusion;
+package games.cubi.raycastedEntityOcclusion.Raycast;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -37,6 +37,7 @@ public class MovementTracker {
         if (dq == null || dq.size() < 5) return null;
         Location old = dq.peekFirst();
         Location now = dq.peekLast();
+        if (old == null || now == null) return null;
         double dx = now.getX() - old.getX();
         double dy = now.getY() - old.getY();
         double dz = now.getZ() - old.getZ();
