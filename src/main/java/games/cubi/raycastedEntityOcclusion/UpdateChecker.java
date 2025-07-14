@@ -17,7 +17,7 @@ import java.net.URL;
 import java.util.concurrent.CompletableFuture;
 
 
-public class UpdateChecker implements org.bukkit.event.Listener {
+public class UpdateChecker {
     private final RaycastedEntityOcclusion plugin;
 
     public UpdateChecker(RaycastedEntityOcclusion plugin) {
@@ -54,14 +54,6 @@ public class UpdateChecker implements org.bukkit.event.Listener {
         return future;
     }
 
-    //on join
-    @EventHandler
-    public void onPlayerJoin(org.bukkit.event.player.PlayerJoinEvent event) {
-        if (event.getPlayer().hasPermission("raycastedentityocclusions.updatecheck")) {
-            Player sender = event.getPlayer();
-            checkForUpdates(plugin, sender);
-        }
-    }
     public static void checkForUpdates(RaycastedEntityOcclusion plugin, CommandSender audience) {
         fetchFeaturedVersion(plugin).thenAccept(version -> {
             // This runs synchronously when the version is fetched
