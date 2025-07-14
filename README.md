@@ -19,5 +19,3 @@ Use cases:
 Known issues:
 - Due to the nature of the plugin, there will be a short delay once an entity should be visible before it appears, causing it to appear like it "popped" into view. This issue is partially resolved by turning engine-mode to 2
 - If cull-player is set to true any culled players will be removed from tablist. Potential solutions are being investigated, suggestions are welcome.
-
-(Hello people adding folia support)
