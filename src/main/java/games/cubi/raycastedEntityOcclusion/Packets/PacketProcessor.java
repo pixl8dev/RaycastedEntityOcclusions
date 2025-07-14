@@ -4,8 +4,6 @@ import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.event.PacketSendEvent;
 import com.github.retrooper.packetevents.manager.player.PlayerManager;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerPlayerInfoRemove;
-import games.cubi.raycastedEntityOcclusion.PDC.PlayerHidingManager;
-import games.cubi.raycastedEntityOcclusion.Raycast.RaycastUtil;
 import games.cubi.raycastedEntityOcclusion.RaycastedEntityOcclusion;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
