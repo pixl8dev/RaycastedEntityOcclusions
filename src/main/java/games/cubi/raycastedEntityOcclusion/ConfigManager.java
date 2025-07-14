@@ -20,6 +20,19 @@ public class ConfigManager {
     public FileConfiguration cfg;
     public boolean packetEventsPresent = false;
 
+    public static final int SNAPSHOT_REFRESH_INTERVAL_DEFAULT = 60;
+    public static final int ENGINE_MODE_DEFAULT = 1;
+    public static final int MAX_OCCLUDING_COUNT_DEFAULT = 3;
+    public static final boolean DEBUG_MODE_DEFAULT = false;
+    public static final int ALWAYS_SHOW_RADIUS_DEFAULT = 16;
+    public static final int RAYCAST_RADIUS_DEFAULT = 48;
+    public static final int SEARCH_RADIUS_DEFAULT = 48;
+    public static final boolean CULL_PLAYERS_DEFAULT = false;
+    public static final boolean ONLY_CULL_SNEAKING_PLAYERS_DEFAULT = false;
+    public static final int RECHECK_INTERVAL_DEFAULT = 50;
+    public static final boolean CHECK_TILE_ENTITIES_DEFAULT = true;
+    public static final int TILE_ENTITY_RECHECK_INTERVAL_DEFAULT = 0;
+
     public ConfigManager(JavaPlugin plugin) {
         this.plugin = plugin;
         load();
@@ -30,34 +43,34 @@ public class ConfigManager {
         plugin.reloadConfig();
         cfg = plugin.getConfig();
 
-        snapshotRefreshInterval = cfg.getInt("snapshot-refresh-interval", 60);
-        engineMode = cfg.getInt("engine-mode", 1);
-        maxOccludingCount = cfg.getInt("max-occluding-count", 3);
-        debugMode = cfg.getBoolean("debug-mode", false);
+        snapshotRefreshInterval = cfg.getInt("snapshot-refresh-interval", SNAPSHOT_REFRESH_INTERVAL_DEFAULT);
+        engineMode = cfg.getInt("engine-mode", ENGINE_MODE_DEFAULT);
+        maxOccludingCount = cfg.getInt("max-occluding-count", MAX_OCCLUDING_COUNT_DEFAULT);
+        debugMode = cfg.getBoolean("debug-mode", DEBUG_MODE_DEFAULT);
 
-        alwaysShowRadius = cfg.getInt("always-show-radius", 8);
-        raycastRadius = cfg.getInt("raycast-radius", 48);
-        searchRadius = cfg.getInt("search-radius", 48);
-        cullPlayers = cfg.getBoolean("cull-players", false);
-        onlyCullSneakingPlayers = cfg.getBoolean("only-cull-sneaking-players", false);
-        recheckInterval = cfg.getInt("recheck-interval", 20);
+        alwaysShowRadius = cfg.getInt("always-show-radius", ALWAYS_SHOW_RADIUS_DEFAULT);
+        raycastRadius = cfg.getInt("raycast-radius", RAYCAST_RADIUS_DEFAULT);
+        searchRadius = cfg.getInt("search-radius", SEARCH_RADIUS_DEFAULT);
+        cullPlayers = cfg.getBoolean("cull-players", CULL_PLAYERS_DEFAULT);
+        onlyCullSneakingPlayers = cfg.getBoolean("only-cull-sneaking-players", ONLY_CULL_SNEAKING_PLAYERS_DEFAULT);
+        recheckInterval = cfg.getInt("recheck-interval", RECHECK_INTERVAL_DEFAULT);
 
-        checkTileEntities = cfg.getBoolean("check-tile-entities", false);
-        tileEntityRecheckInterval = cfg.getInt("tile-entity-recheck-interval", 0);
+        checkTileEntities = cfg.getBoolean("check-tile-entities", CHECK_TILE_ENTITIES_DEFAULT);
+        tileEntityRecheckInterval = cfg.getInt("tile-entity-recheck-interval", TILE_ENTITY_RECHECK_INTERVAL_DEFAULT);
 
         // Write defaults if missing
-        cfg.addDefault("snapshot-refresh-interval", 60);
-        cfg.addDefault("engine-mode", 1);
-        cfg.addDefault("max-occluding-count", 3);
-        cfg.addDefault("debug-mode", false);
-        cfg.addDefault("always-show-radius", 8);
-        cfg.addDefault("raycast-radius", 48);
-        cfg.addDefault("search-radius", 48);
-        cfg.addDefault("cull-players", false);
-        cfg.addDefault("only-cull-sneaking-players", false);
-        cfg.addDefault("recheck-interval", 20);
-        cfg.addDefault("check-tile-entities", false);
-        cfg.addDefault("tile-entity-recheck-interval", 0);
+        cfg.addDefault("snapshot-refresh-interval", SNAPSHOT_REFRESH_INTERVAL_DEFAULT);
+        cfg.addDefault("engine-mode", ENGINE_MODE_DEFAULT);
+        cfg.addDefault("max-occluding-count", MAX_OCCLUDING_COUNT_DEFAULT);
+        cfg.addDefault("debug-mode", DEBUG_MODE_DEFAULT);
+        cfg.addDefault("always-show-radius", ALWAYS_SHOW_RADIUS_DEFAULT);
+        cfg.addDefault("raycast-radius", RAYCAST_RADIUS_DEFAULT);
+        cfg.addDefault("search-radius", SEARCH_RADIUS_DEFAULT);
+        cfg.addDefault("cull-players", CULL_PLAYERS_DEFAULT);
+        cfg.addDefault("only-cull-sneaking-players", ONLY_CULL_SNEAKING_PLAYERS_DEFAULT);
+        cfg.addDefault("recheck-interval", RECHECK_INTERVAL_DEFAULT);
+        cfg.addDefault("check-tile-entities", CHECK_TILE_ENTITIES_DEFAULT);
+        cfg.addDefault("tile-entity-recheck-interval", TILE_ENTITY_RECHECK_INTERVAL_DEFAULT);
         cfg.options().copyDefaults(true);
         plugin.saveConfig();
     }
