@@ -64,12 +64,12 @@ public class UpdateChecker implements org.bukkit.event.Listener {
     }
     public static void checkForUpdates(RaycastedEntityOcclusion plugin, CommandSender audience) {
         fetchFeaturedVersion(plugin).thenAccept(version -> {
-            // This runs asynchronously when the version is fetched
+            // This runs synchronously when the version is fetched
             Bukkit.getScheduler().runTask(plugin, () -> {
                 if (plugin.getDescription().getVersion().equals(version)) {
                     audience.sendRichMessage("<green>You are using the latest version of Raycasted Entity Occlusions.");
                 } else {
-                    audience.sendRichMessage("<red>You are not using the latest version of Raycasted Entity Occlusions. Please update to <green>" + version);
+                    audience.sendRichMessage("<red>You are not using the latest version of Raycasted Entity Occlusions. Please update to <green>v" + version);
                 }
             });
         }).exceptionally(ex -> {
