@@ -9,6 +9,7 @@ import games.cubi.raycastedEntityOcclusion.Packets.PacketsListener;
 import games.cubi.raycastedEntityOcclusion.Raycast.Engine;
 import games.cubi.raycastedEntityOcclusion.Raycast.MovementTracker;
 import games.cubi.raycastedEntityOcclusion.Snapshot.ChunkSnapshotManager;
+import games.cubi.raycastedEntityOcclusion.bStats.Metrics;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
@@ -17,6 +18,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
+import games.cubi.raycastedEntityOcclusion.bStats.MetricsCollector;
 
 public class RaycastedEntityOcclusion extends JavaPlugin implements CommandExecutor {
     private ConfigManager cfg;
@@ -68,9 +70,10 @@ public class RaycastedEntityOcclusion extends JavaPlugin implements CommandExecu
         });
 
         //bStats
-        int pluginId = 24553;
-        new Metrics(this, pluginId);
+        new MetricsCollector(this, cfg);
 
+
+        // TODO: Move this somewhere else, the main class should be cleaner
         new BukkitRunnable() {
             @Override
             public void run() {
