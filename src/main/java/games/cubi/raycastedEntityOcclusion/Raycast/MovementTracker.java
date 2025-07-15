@@ -1,9 +1,10 @@
 package games.cubi.raycastedEntityOcclusion.Raycast;
 
+import games.cubi.raycastedEntityOcclusion.ConfigManager;
+import games.cubi.raycastedEntityOcclusion.RaycastedEntityOcclusion;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.ArrayDeque;
@@ -14,16 +15,18 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MovementTracker {
     private final Map<Player, Deque<Location>> history = new ConcurrentHashMap<>();
 
-    public MovementTracker(Plugin plugin) {
+    public MovementTracker(RaycastedEntityOcclusion plugin, ConfigManager config) {
         new BukkitRunnable() {
             @Override
             public void run() {
-                for (Player p : Bukkit.getOnlinePlayers()) {
-                    history.computeIfAbsent(p, k -> new ArrayDeque<>(5));
-                    Deque<Location> dq = history.get(p);
-                    if (dq.size() >= 5) dq.removeFirst();
+                if (config.engineMode == 2) {
+                    for (Player p : Bukkit.getOnlinePlayers()) {
+                        history.computeIfAbsent(p, k -> new ArrayDeque<>(5));
+                        Deque<Location> dq = history.get(p);
+                        if (dq.size() >= 5) dq.removeFirst();
 
-                    dq.addLast(p.getEyeLocation().clone());
+                        dq.addLast(p.getEyeLocation());
+                    }
                 }
             }
         }.runTaskTimer(plugin, 1L, 1L);
