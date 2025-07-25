@@ -5,14 +5,21 @@ import games.cubi.raycastedEntityOcclusion.Snapshot.ChunkSnapshotManager;
 import games.cubi.raycastedEntityOcclusion.ConfigManager;
 import games.cubi.raycastedEntityOcclusion.RaycastedEntityOcclusion;
 
-import org.bukkit.*;
+import org.bukkit.Location;
+import org.bukkit.Particle;
+import org.bukkit.Bukkit;
+import org.bukkit.Color;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.Set;
+import java.util.List;
 
 public class Engine {
 
@@ -70,9 +77,7 @@ public class Engine {
                     p.showEntity(plugin, e);
                 } else if (dist > cfg.raycastRadius) {
                     p.hideEntity(plugin, e);
-                } else if (p.canSee(e) && plugin.tick % cfg.recheckInterval != 0) {
-                    // player can see entity, no need to raycast
-                } else {
+                } else if (!p.canSee(e) || plugin.tick % cfg.recheckInterval == 0) {
                     // schedule for async raycast (with or without predEye)
                     jobs.add(new RayJob(p, e, eye, predEye, target));
                 }
@@ -134,7 +139,7 @@ public class Engine {
                     HashSet<Location> tileEntities = new HashSet<>();
                     for (int x = (-chunksRadius/2)+chunkX; x <= chunksRadius+chunkX; x++) {
                         for (int z = (-chunksRadius/2)+chunkZ; z <= chunksRadius+chunkZ; z++) {
-                            tileEntities.addAll(snapMgr.getTileEntitiesInChunk(world, x, z));
+                            tileEntities.addAll(snapMgr.getTileEntitiesInChunk(world, p.getWorld().getChunkAt(x, z).getChunkKey()));
                         }
                     }
                     for (Location loc : tileEntities) {
@@ -211,6 +216,3 @@ public class Engine {
         });
     }
 }
-
-/*
- */
