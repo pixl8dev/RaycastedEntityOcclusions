@@ -2,18 +2,19 @@ package games.cubi.raycastedEntityOcclusion.Snapshot;
 
 import games.cubi.raycastedEntityOcclusion.ConfigManager;
 import games.cubi.raycastedEntityOcclusion.RaycastedEntityOcclusion;
+
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.Location;
 import org.bukkit.Chunk;
-import java.util.Collections;
 import org.bukkit.ChunkSnapshot;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.TileState;
 import org.bukkit.scheduler.BukkitRunnable;
+
 import java.util.Set;
 import java.util.Map;
-
+import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ChunkSnapshotManager {
