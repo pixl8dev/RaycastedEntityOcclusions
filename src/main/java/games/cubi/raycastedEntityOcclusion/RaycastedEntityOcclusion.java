@@ -44,7 +44,7 @@ public class RaycastedEntityOcclusion extends JavaPlugin implements CommandExecu
     public void onEnable() {
         cfg = new ConfigManager(this);
         snapMgr = new ChunkSnapshotManager(this);
-        tracker = new MovementTracker(this);
+        tracker = new MovementTracker(this, cfg);
         commands = new CommandsManager(this, cfg);
         getServer().getPluginManager().registerEvents(new EventListener(this, snapMgr, cfg), this);
         //Brigadier API
