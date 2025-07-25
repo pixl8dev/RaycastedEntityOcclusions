@@ -141,7 +141,7 @@ public class Engine {
                     HashSet<Location> tileEntities = new HashSet<>();
                     for (int x = (-chunksRadius/2)+chunkX; x <= chunksRadius+chunkX; x++) {
                         for (int z = (-chunksRadius/2)+chunkZ; z <= chunksRadius+chunkZ; z++) {
-                            tileEntities.addAll(snapMgr.getTileEntitiesInChunk(world, x, z));
+                            tileEntities.addAll(snapMgr.getTileEntitiesInChunk(world, p.getWorld().getChunkAt(x, z).getChunkKey()));
                         }
                     }
                     for (Location loc : tileEntities) {
