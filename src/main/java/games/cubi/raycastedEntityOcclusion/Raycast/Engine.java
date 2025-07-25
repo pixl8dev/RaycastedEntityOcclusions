@@ -77,9 +77,7 @@ public class Engine {
                     p.showEntity(plugin, e);
                 } else if (dist > cfg.raycastRadius) {
                     p.hideEntity(plugin, e);
-                } else if (p.canSee(e) && plugin.tick % cfg.recheckInterval != 0) {
-                    continue;
-                } else {
+                } else if (!p.canSee(e) || plugin.tick % cfg.recheckInterval == 0) {
                     // schedule for async raycast (with or without predEye)
                     jobs.add(new RayJob(p, e, eye, predEye, target));
                 }
