@@ -5,6 +5,7 @@ import games.cubi.raycastedEntityOcclusion.RaycastedEntityOcclusion;
 
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Chunk;
 import org.bukkit.ChunkSnapshot;
@@ -56,13 +57,8 @@ public class ChunkSnapshotManager {
                     if (now - e.getValue().lastRefresh >= cfg.snapshotRefreshInterval * 1000L && chunksRefreshed < chunksToRefreshMaximum) {
                         chunksRefreshed++;
                         String key = e.getKey();
-                        String[] parts = key.split(":");
-                        World w = plugin.getServer().getWorld(parts[0]);
-                        if (w == null) {
-                            plugin.getLogger().warning("ChunkSnapshotManager: World " + parts[0] + " not found. Please report this on our discord (discord.cubi.games)'");
-                            continue;
-                        }
-                        Chunk c = w.getChunkAt(Integer.parseInt(parts[1]));
+                        //String[] parts = key.split(":");
+                        Chunk c = getKeyChunk(key);
                         e.setValue(takeSnapshot(c, now));
                     }
                 }
@@ -130,8 +126,26 @@ public class ChunkSnapshotManager {
         return data;
     }
 
-    private String key(Chunk c) {
-        return c.getWorld().getName() + ":" + c.getChunkKey();
+    public String key(Chunk c) {
+        return c.getWorld().getName() + ":" + c.getX() + ":" + c.getZ();
+    }
+    public String key(World world, int x, int z) {
+        return world + ":" + x + ":" + z;
+    }
+    public int getKeyX(String key) {
+        String[] parts = key.split(":");
+        return Integer.parseInt(parts[1]);
+    }
+    public int getKeyZ(String key) {
+        String[] parts = key.split(":");
+        return Integer.parseInt(parts[2]);
+    }
+    public World getKeyWorld(String key) {
+        String[] parts = key.split(":");
+        return Bukkit.getWorld(parts[0]);
+    }
+    public Chunk getKeyChunk(String key) {
+        return getKeyWorld(key).getChunkAt(getKeyX(key), getKeyZ(key));
     }
 
     public Material getMaterialAt(Location loc) {
@@ -158,8 +172,8 @@ public class ChunkSnapshotManager {
     }
 
     //get TileEntity Locations in chunk
-    public Set<Location> getTileEntitiesInChunk(String worldName, long number) {
-        Data d = dataMap.get(worldName + ":" + number);
+    public Set<Location> getTileEntitiesInChunk(World world, int x, int z) {
+        Data d = dataMap.get(key(world, x, z));
         if (d == null) {
             return Collections.emptySet();
         }
