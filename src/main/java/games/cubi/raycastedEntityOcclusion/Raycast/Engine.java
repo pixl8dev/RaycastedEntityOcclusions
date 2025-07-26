@@ -8,6 +8,7 @@ import games.cubi.raycastedEntityOcclusion.RaycastedEntityOcclusion;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Bukkit;
+import org.bukkit.World;
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -129,7 +130,7 @@ public class Engine {
         if (cfg.checkTileEntities) {
             for (Player p : Bukkit.getOnlinePlayers()) {
                 if (p.hasPermission("raycastedentityocclusions.bypass")) continue;
-                String world = p.getWorld().getName();
+                World world = p.getWorld();
                 //get player's chunk location
                 int chunkX = p.getLocation().getBlockX() >> 4;
                 int chunkZ = p.getLocation().getBlockZ() >> 4;
@@ -139,7 +140,7 @@ public class Engine {
                     HashSet<Location> tileEntities = new HashSet<>();
                     for (int x = (-chunksRadius/2)+chunkX; x <= chunksRadius+chunkX; x++) {
                         for (int z = (-chunksRadius/2)+chunkZ; z <= chunksRadius+chunkZ; z++) {
-                            tileEntities.addAll(snapMgr.getTileEntitiesInChunk(world, p.getWorld().getChunkAt(x, z).getChunkKey()));
+                            tileEntities.addAll(snapMgr.getTileEntitiesInChunk(world, x, z));
                         }
                     }
                     for (Location loc : tileEntities) {
