@@ -51,3 +51,9 @@ processResources {
         expand props
     }
 }
+
+jar {
+    manifest {
+        attributes "paperweight-mappings-namespace": "mojang"
+    }
+}
