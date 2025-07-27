@@ -17,15 +17,15 @@ public class Logger {
     }
 
     public static void info(String message) {
-        forwardLog(PREFIX+message, Level.INFO);
+        forwardLog(/*PREFIX+*/message, Level.INFO);
     }
 
     public static void warning(String message) {
-        forwardLog(PREFIX_WARNING+message, Level.WARN);
+        forwardLog(/* PREFIX_WARNING + */ message, Level.WARN);
     }
 
     public static void error(String message) {
-        forwardLog(PREFIX_ERROR+message, Level.ERROR);
+        forwardLog(/* PREFIX_ERROR+ */ message, Level.ERROR);
     }
 
     private static void forwardLog(String message, Level severity) {

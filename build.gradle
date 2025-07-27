@@ -3,7 +3,7 @@ plugins {
 }
 
 group = 'games.cubi'
-version = '1.6.0-Prerelease'
+version = '1.6.0'
 
 repositories {
     mavenCentral()
@@ -22,7 +22,7 @@ repositories {
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.8-R0.1-SNAPSHOT")
-    compileOnly("com.github.retrooper:packetevents-spigot:2.8.0")
+    compileOnly("com.github.retrooper:packetevents-spigot:2.8.0") //Latest is 2.9.4, but using 2.8.0 api still works and allows for compatibility with older versions
 }
 
 def targetJavaVersion = 21
