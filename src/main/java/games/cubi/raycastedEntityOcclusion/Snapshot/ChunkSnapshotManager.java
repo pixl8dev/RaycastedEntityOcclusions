@@ -1,6 +1,8 @@
 package games.cubi.raycastedEntityOcclusion.Snapshot;
 
 import games.cubi.raycastedEntityOcclusion.ConfigManager;
+import games.cubi.raycastedEntityOcclusion.Logger;
+import games.cubi.raycastedEntityOcclusion.Raycast.Engine;
 import games.cubi.raycastedEntityOcclusion.RaycastedEntityOcclusion;
 
 import org.bukkit.Material;
@@ -33,7 +35,7 @@ public class ChunkSnapshotManager {
         }
     }
 
-    private final ConcurrentHashMap<String, Data> dataMap = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, Data> dataMap = new ConcurrentHashMap<>();
     private final ConfigManager cfg;
     private final RaycastedEntityOcclusion plugin;
 
@@ -43,7 +45,7 @@ public class ChunkSnapshotManager {
         //get loaded chunks and add them to dataMap
         for (World w : plugin.getServer().getWorlds()) {
             for (Chunk c : w.getLoadedChunks()) {
-                dataMap.put(key(c), takeSnapshot(c, System.currentTimeMillis()));
+                snapshotChunk(c);
             }
         }
 
@@ -63,24 +65,37 @@ public class ChunkSnapshotManager {
                     }
                 }
                 if (cfg.debugMode) {
-                    plugin.getLogger().info("ChunkSnapshotManager: Refreshed " + chunksRefreshed + " chunks out of " + chunksToRefreshMaximum + " maximum.");
+                    Logger.info("ChunkSnapshotManager: Refreshed " + chunksRefreshed + " chunks out of " + chunksToRefreshMaximum + " maximum.");
                 }
             }
         }.runTaskTimer(plugin, cfg.snapshotRefreshInterval * 2L, cfg.snapshotRefreshInterval * 2L /* This runs 10 times per refreshInterval, spreading out the refreshes */);
     }
 
     public void onChunkLoad(Chunk c) {
-        dataMap.put(key(c), takeSnapshot(c, System.currentTimeMillis()));
+        snapshotChunk(c);
     }
 
     public void onChunkUnload(Chunk c) {
+        removeChunkSnapshot(c);
+    }
+
+    public void snapshotChunk(Chunk c) {
+        if (cfg.debugMode) {
+            //Logger.info("ChunkSnapshotManager: Taking snapshot of chunk " + c.getWorld().getName() + ":" + c.getX() + ":" + c.getZ());
+        }
+        dataMap.put(key(c), takeSnapshot(c, System.currentTimeMillis()));
+    }
+    public void removeChunkSnapshot(Chunk c) {
+        if (cfg.debugMode) {
+            Logger.info("ChunkSnapshotManager: Removing snapshot of chunk " + c.getWorld().getName() + ":" + c.getX() + ":" + c.getZ());
+        }
         dataMap.remove(key(c));
     }
 
     // Used by EventListener to update the delta map when a block is placed or broken
     public void onBlockChange(Location loc, Material m) {
         if (cfg.debugMode) {
-            plugin.getLogger().info("ChunkSnapshotManager: Block change at " + loc + " to " + m);
+            Logger.info("ChunkSnapshotManager: Block change at " + loc + " to " + m);
         }
         Data d = dataMap.get(key(loc.getChunk()));
         if (d != null) {
@@ -91,7 +106,7 @@ public class ChunkSnapshotManager {
                 loc = loc.clone().add(0.5, 0.5, 0.5);
                 if (data instanceof TileState) {
                     if (cfg.debugMode){
-                        plugin.getLogger().info("ChunkSnapshotManager: Tile entity at " + loc);
+                        Logger.info("ChunkSnapshotManager: Tile entity at " + loc);
                     }
                     d.tileEntities.add(loc);
                 } else {
@@ -149,11 +164,12 @@ public class ChunkSnapshotManager {
     }
 
     public Material getMaterialAt(Location loc) {
-        Data d = dataMap.get(key(loc.getChunk()));
+        Chunk chunk = loc.getChunk();
+        Data d = dataMap.get(key(chunk));
         if (d == null) {
             Chunk c = loc.getChunk();
-            //dataMap.put(key(c), takeSnapshot(c, System.currentTimeMillis())); infinite loop
-            System.err.println("ChunkSnapshotManager: No snapshot for " + c+ " Please report this on our discord (discord.cubi.games)'");
+            Logger.error("ChunkSnapshotManager: No snapshot for " + c+ " If this error persists, please report this on our discord (discord.cubi.games)");
+            Engine.syncRecheck.add(chunk);
             return loc.getBlock().getType();
         }
         double yLevel = loc.getY();

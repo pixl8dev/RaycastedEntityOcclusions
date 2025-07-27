@@ -1,6 +1,7 @@
 package games.cubi.raycastedEntityOcclusion.Raycast;
 
 
+import games.cubi.raycastedEntityOcclusion.Logger;
 import games.cubi.raycastedEntityOcclusion.Snapshot.ChunkSnapshotManager;
 import games.cubi.raycastedEntityOcclusion.ConfigManager;
 import games.cubi.raycastedEntityOcclusion.RaycastedEntityOcclusion;
@@ -10,6 +11,7 @@ import org.bukkit.Particle;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.Color;
+import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
@@ -25,6 +27,7 @@ import java.util.List;
 public class Engine {
 
     public static ConcurrentHashMap<Location, Set<Player>> canSeeTileEntity = new ConcurrentHashMap<>();
+    public static Set<Chunk> syncRecheck = ConcurrentHashMap.newKeySet();
 
     private static class RayJob {
         final Player player;
@@ -54,6 +57,16 @@ public class Engine {
 
     public static void runEngine(ConfigManager cfg, ChunkSnapshotManager snapMgr, MovementTracker tracker, RaycastedEntityOcclusion plugin) {
         // ----- PHASE 1: SYNC GATHER -----
+
+        if (!syncRecheck.isEmpty()) {
+            Logger.warning(syncRecheck.size() + " chunks failed to snapshot asynchronously, rechecking them now.");
+            for (Chunk c : syncRecheck) {
+                if (c.isLoaded()) {
+                    plugin.getChunkSnapshotManager().snapshotChunk(c);
+                }
+            }
+        }
+
         List<RayJob> jobs = new ArrayList<>();
         for (Player p : Bukkit.getOnlinePlayers()) {
             if (p.hasPermission("raycastedentityocclusions.bypass")) continue;
