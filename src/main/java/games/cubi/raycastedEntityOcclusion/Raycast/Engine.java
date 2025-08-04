@@ -63,6 +63,8 @@ public class Engine {
             for (Chunk c : syncRecheck) {
                 if (c.isLoaded()) {
                     plugin.getChunkSnapshotManager().snapshotChunk(c);
+                    syncRecheck.remove(c);
+                    Logger.info("Successfully rechecked chunk " + c.getX() + ", " + c.getZ() + " in world " + c.getWorld().getName());
                 }
             }
         }
