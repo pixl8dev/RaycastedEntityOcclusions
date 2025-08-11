@@ -145,7 +145,7 @@ public class ChunkSnapshotManager {
         return c.getWorld().getName() + ":" + c.getX() + ":" + c.getZ();
     }
     public String key(World world, int x, int z) {
-        return world + ":" + x + ":" + z;
+        return world.getName() + ":" + x + ":" + z;
     }
     public int getKeyX(String key) {
         String[] parts = key.split(":");
