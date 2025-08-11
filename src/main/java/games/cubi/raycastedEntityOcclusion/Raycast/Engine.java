@@ -14,6 +14,8 @@ import org.bukkit.Color;
 import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockState;
+import org.bukkit.block.TileState;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -28,6 +30,9 @@ public class Engine {
 
     public static ConcurrentHashMap<Location, Set<Player>> canSeeTileEntity = new ConcurrentHashMap<>();
     public static Set<Chunk> syncRecheck = ConcurrentHashMap.newKeySet();
+
+    private final static BlockData STONE = Material.STONE.createBlockData();
+    private final static BlockData DEEPSLATE = Material.DEEPSLATE.createBlockData();
 
     private static class RayJob {
         final Player player;
@@ -169,11 +174,11 @@ public class Engine {
 
                         double distSquared = loc.distanceSquared(p.getLocation());
                         if (distSquared > cfg.searchRadius * cfg.searchRadius) {
-                            hideTileEntity(p, loc);
+                            hideTileEntity(p, loc, plugin);
                             continue;
                         }
                         if (distSquared < cfg.alwaysShowRadius * cfg.alwaysShowRadius) {
-                            showTileEntity(p, loc);
+                            showTileEntity(p, loc, plugin);
                             continue;
                         }
 
@@ -187,7 +192,6 @@ public class Engine {
                                 }
                             }
                         }
-                        syncToggleTileEntity(p, loc, result, plugin);
                         if (result) {
                             canSeeTileEntity.computeIfAbsent(loc, k -> ConcurrentHashMap.newKeySet()).add(p);
                         } else {
@@ -199,36 +203,38 @@ public class Engine {
                                 }
                             }
                         }
+                        syncToggleTileEntity(p, loc, result, plugin);
                     }
                 });
             }
         }
     }
 
-    public static void hideTileEntity(Player p, Location location) {
-        if (p.hasPermission("raycastedentityocclusions.bypass")) return;
-        BlockData fake;
-        if (location.getBlockY() < 0) {
-            fake = Material.DEEPSLATE.createBlockData();
-        }
-        else {
-            fake = Material.STONE.createBlockData();
-        }
-        p.sendBlockChange(location, fake);
+    public static void hideTileEntity(Player p, Location location, RaycastedEntityOcclusion plugin) {
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            if (p.hasPermission("raycastedentityocclusions.bypass")) return;
+            if (location.getBlockY() < 0) p.sendBlockChange(location, DEEPSLATE);
+            else p.sendBlockChange(location, STONE);
+        });
     }
-    public static void showTileEntity(Player p, Location location) {
-        Block block = location.getBlock();
-        BlockData data = block.getBlockData();
-        p.sendBlockChange(location, data);
+    public static void showTileEntity(Player p, Location location, RaycastedEntityOcclusion plugin) {
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            Block block = location.getBlock();
+            BlockState data = block.getState();
+            if (data instanceof TileState tileData) {
+                p.sendBlockChange(location, block.getBlockData());
+                p.sendBlockUpdate(location, tileData);
+            }
+            else throw new RuntimeException("Attempting to show a block which isn't a tile entity");
+        });
+
 
     }
-    public static void syncToggleTileEntity(Player p, Location loc, boolean bool, RaycastedEntityOcclusion plugin) {
-        Bukkit.getScheduler().runTask(plugin, () -> {
-            if (bool) {
-                showTileEntity(p, loc);
-            } else {
-                hideTileEntity(p, loc);
-            }
-        });
+    public static void syncToggleTileEntity(Player p, Location loc, boolean show, RaycastedEntityOcclusion plugin) {
+        if (show) {
+            showTileEntity(p, loc, plugin);
+        } else {
+            hideTileEntity(p, loc, plugin);
+        }
     }
 }
