@@ -180,7 +180,7 @@ public class ChunkSnapshotManager {
         }
         Material dm = d.delta.get(blockLoc(loc));
         if (dm != null) {
-            Logger.info("Using delta");
+            if (cfg.debugMode) Logger.info("Using delta");
             return dm;
         }
         int x = loc.getBlockX() & 0xF;
