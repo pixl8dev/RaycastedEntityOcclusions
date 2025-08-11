@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Set;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class Engine {
 
@@ -157,9 +158,10 @@ public class Engine {
 
     }
 
+    private static ConcurrentLinkedQueue<TileResult> results = new ConcurrentLinkedQueue<>();
+
     public static void runTileEngine(ConfigManager cfg, ChunkSnapshotManager snapMgr, MovementTracker tracker, RaycastedEntityOcclusion plugin) {
         if (cfg.checkTileEntities) {
-            List<TileResult> results = new ArrayList<>();
             for (Player p : Bukkit.getOnlinePlayers()) {
                 if (p.hasPermission("raycastedentityocclusions.bypass")) continue;
                 World world = p.getWorld();
@@ -226,6 +228,7 @@ public class Engine {
                 boolean visible = r.visible;
 
                 syncToggleTileEntity(p, loc, visible, plugin);
+                results.remove(r);
             }
         }
     }
