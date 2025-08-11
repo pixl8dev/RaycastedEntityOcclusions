@@ -59,9 +59,7 @@ public class ChunkSnapshotManager {
                     if (now - e.getValue().lastRefresh >= cfg.snapshotRefreshInterval * 1000L && chunksRefreshed < chunksToRefreshMaximum) {
                         chunksRefreshed++;
                         String key = e.getKey();
-                        //String[] parts = key.split(":");
-                        Chunk c = getKeyChunk(key);
-                        e.setValue(takeSnapshot(c, now));
+                        snapshotChunk(key);
                     }
                 }
                 if (cfg.debugMode) {
@@ -84,6 +82,9 @@ public class ChunkSnapshotManager {
             //Logger.info("ChunkSnapshotManager: Taking snapshot of chunk " + c.getWorld().getName() + ":" + c.getX() + ":" + c.getZ());
         }
         dataMap.put(key(c), takeSnapshot(c, System.currentTimeMillis()));
+    }
+    public void snapshotChunk(String key) {
+        snapshotChunk(getKeyChunk(key));
     }
     public void removeChunkSnapshot(Chunk c) {
         if (cfg.debugMode) {
