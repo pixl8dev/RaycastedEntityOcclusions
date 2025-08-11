@@ -100,7 +100,7 @@ public class ChunkSnapshotManager {
         }
         Data d = dataMap.get(key(loc.getChunk()));
         if (d != null) {
-            d.delta.put(loc, m);
+            d.delta.put(blockLoc(loc), m);
             if (cfg.checkTileEntities) {
                 // Check if the block is a tile entity
                 BlockState data = loc.getBlock().getState();
@@ -115,6 +115,7 @@ public class ChunkSnapshotManager {
                 }
             }
         }
+        else {Logger.error("Data map value empty, ignoring block update!");}
     }
 
     private Data takeSnapshot(Chunk c, long now) {
@@ -177,8 +178,9 @@ public class ChunkSnapshotManager {
         if (yLevel < d.minHeight || yLevel > d.maxHeight) {
             return null;
         }
-        Material dm = d.delta.get(loc);
+        Material dm = d.delta.get(blockLoc(loc));
         if (dm != null) {
+            Logger.info("Using delta");
             return dm;
         }
         int x = loc.getBlockX() & 0xF;
@@ -200,6 +202,13 @@ public class ChunkSnapshotManager {
     public int getNumberOfCachedChunks() {
         return dataMap.size();
         //created to use in a debug command maybe
+    }
+
+    public static Location blockLoc(Location fullLoc) {
+        Location blockLoc = fullLoc.toBlockLocation();
+        blockLoc.setYaw(0);
+        blockLoc.setPitch(0);
+        return blockLoc;
     }
 
 }
