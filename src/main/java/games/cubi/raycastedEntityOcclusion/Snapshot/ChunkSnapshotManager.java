@@ -37,11 +37,9 @@ public class ChunkSnapshotManager {
 
     private static final ConcurrentHashMap<String, Data> dataMap = new ConcurrentHashMap<>();
     private final ConfigManager cfg;
-    private final RaycastedEntityOcclusion plugin;
 
     public ChunkSnapshotManager(RaycastedEntityOcclusion plugin) {
         cfg = plugin.getConfigManager();
-        this.plugin = plugin;
         //get loaded chunks and add them to dataMap
         for (World w : plugin.getServer().getWorlds()) {
             for (Chunk c : w.getLoadedChunks()) {
@@ -78,9 +76,9 @@ public class ChunkSnapshotManager {
     }
 
     public void snapshotChunk(Chunk c) {
-        if (cfg.debugMode) {
+        //if (cfg.debugMode) {
             //Logger.info("ChunkSnapshotManager: Taking snapshot of chunk " + c.getWorld().getName() + ":" + c.getX() + ":" + c.getZ());
-        }
+        //}
         dataMap.put(key(c), takeSnapshot(c, System.currentTimeMillis()));
     }
     public void snapshotChunk(String key) {

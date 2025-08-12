@@ -158,7 +158,7 @@ public class Engine {
 
     }
 
-    private static ConcurrentLinkedQueue<TileResult> results = new ConcurrentLinkedQueue<>();
+    private final static ConcurrentLinkedQueue<TileResult> results = new ConcurrentLinkedQueue<>();
 
     public static void runTileEngine(ConfigManager cfg, ChunkSnapshotManager snapMgr, MovementTracker tracker, RaycastedEntityOcclusion plugin) {
         if (cfg.checkTileEntities) {
