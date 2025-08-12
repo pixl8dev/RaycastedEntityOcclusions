@@ -168,6 +168,7 @@ public class Engine {
                 //get player's chunk location
                 int chunkX = p.getLocation().getBlockX() >> 4;
                 int chunkZ = p.getLocation().getBlockZ() >> 4;
+                Location playerLoc = p.getLocation();
 
                 //async run with vars passed in
                 Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
@@ -187,7 +188,8 @@ public class Engine {
 
                         if (snapMgr.getMaterialAt(loc).equals(Material.BEACON)) continue;
 
-                        double distSquared = loc.distanceSquared(p.getLocation());
+                        if (!loc.getWorld().equals(playerLoc.getWorld())) continue;
+                        double distSquared = loc.distanceSquared(playerLoc);
                         if (distSquared > cfg.searchRadius * cfg.searchRadius) {
                             results.add(new TileResult(p, loc,false));
                             continue;
