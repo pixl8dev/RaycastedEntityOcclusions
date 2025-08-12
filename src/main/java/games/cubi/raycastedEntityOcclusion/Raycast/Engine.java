@@ -250,7 +250,11 @@ public class Engine {
                 p.sendBlockChange(location, block.getBlockData());
                 p.sendBlockUpdate(location, tileData);
             }
-            else throw new RuntimeException("Attempting to show a block which isn't a tile entity");
+            else {
+                Logger.warning("Tried to show tile entity at " + location + " to "+p.getName()+" but it was not a TileState! Block type: " + block.getType()+". Removing from the list of tile entities.");
+                canSeeTileEntity.remove(location);
+                plugin.getChunkSnapshotManager().removeTileEntity(location);
+            }
         });
 
 

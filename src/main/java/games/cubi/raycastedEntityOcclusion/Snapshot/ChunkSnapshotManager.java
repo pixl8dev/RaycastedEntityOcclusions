@@ -199,6 +199,17 @@ public class ChunkSnapshotManager {
         return d.tileEntities;
     }
 
+    public void removeTileEntity(Location loc) {
+        Chunk c = loc.getChunk();
+        Data d = dataMap.get(key(c));
+        if (d != null) {
+            d.tileEntities.remove(blockLoc(loc));
+            Logger.info("ChunkSnapshotManager: Removed tile entity at " + loc);
+        } else {
+            Logger.error("ChunkSnapshotManager: No snapshot for " + c + " when removing tile entity at " + loc);
+        }
+    }
+
     public int getNumberOfCachedChunks() {
         return dataMap.size();
         //created to use in a debug command maybe
