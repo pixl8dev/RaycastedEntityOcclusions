@@ -13,10 +13,12 @@ import org.bukkit.Chunk;
 import org.bukkit.ChunkSnapshot;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.TileState;
+import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.Set;
 import java.util.Map;
+import java.util.HashSet;
 import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -28,6 +30,7 @@ public class ChunkSnapshotManager {
         public long lastRefresh;
         public int minHeight;
         public int maxHeight;
+        public final Set<Player> trackingPlayers = ConcurrentHashMap.newKeySet();
 
         public Data(ChunkSnapshot snapshot, long time) {
             this.snapshot = snapshot;
@@ -37,66 +40,117 @@ public class ChunkSnapshotManager {
 
     private static final ConcurrentHashMap<String, Data> dataMap = new ConcurrentHashMap<>();
     private final ConfigManager cfg;
+    private final Set<Chunk> activeChunks = ConcurrentHashMap.newKeySet();
+    private static final int BLOCK_VIEW_DISTANCE = 5; // 5 block radius around each player
 
     public ChunkSnapshotManager(RaycastedEntityOcclusion plugin) {
         cfg = plugin.getConfigManager();
-        //get loaded chunks and add them to dataMap
-        for (World w : plugin.getServer().getWorlds()) {
-            for (Chunk c : w.getLoadedChunks()) {
-                snapshotChunk(c);
+        
+        // Start player position tracking task
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                updatePlayerChunks();
             }
-        }
+        }.runTaskTimer(plugin, 20L, 20L); // Run every second
 
+        // Chunk refresh task - only refresh chunks that are actively being used
         new BukkitRunnable() {
             @Override
             public void run() {
                 long now = System.currentTimeMillis();
                 int chunksRefreshed = 0;
-                int chunksToRefreshMaximum = getNumberOfCachedChunks() / 3;
-                for (Map.Entry<String, Data> e : dataMap.entrySet()) {
-                    if (now - e.getValue().lastRefresh >= cfg.snapshotRefreshInterval * 1000L && chunksRefreshed < chunksToRefreshMaximum) {
+                int chunksToRefreshMaximum = Math.max(1, getNumberOfCachedChunks() / 3);
+                
+                // Only refresh chunks that are being actively tracked
+                for (Chunk chunk : activeChunks) {
+                    String key = key(chunk);
+                    Data data = dataMap.get(key);
+                    if (data != null && now - data.lastRefresh >= cfg.snapshotRefreshInterval * 1000L 
+                            && chunksRefreshed < chunksToRefreshMaximum) {
                         chunksRefreshed++;
-                        String key = e.getKey();
-                        snapshotChunk(key);
+                        snapshotChunk(chunk);
                     }
                 }
+                
                 if (cfg.debugMode) {
                     Logger.info("ChunkSnapshotManager: Refreshed " + chunksRefreshed + " chunks out of " + chunksToRefreshMaximum + " maximum.");
                 }
             }
-        }.runTaskTimerAsynchronously(plugin, cfg.snapshotRefreshInterval * 2L, cfg.snapshotRefreshInterval * 2L /* This runs 10 times per refreshInterval, spreading out the refreshes */);
+        }.runTaskTimerAsynchronously(plugin, cfg.snapshotRefreshInterval * 2L, cfg.snapshotRefreshInterval * 2L);
     }
 
     public void onChunkLoad(Chunk c) {
-        snapshotChunk(c);
+        // Only snapshot if it's within a player's view distance
+        if (isChunkNearPlayers(c)) {
+            snapshotChunk(c);
+        }
     }
 
     public void onChunkUnload(Chunk c) {
-        removeChunkSnapshot(c);
+        // Don't immediately remove the snapshot, it might still be needed
+        // The cleanup will handle removing unused chunks
     }
 
     public void snapshotChunk(Chunk c) {
-        //if (cfg.debugMode) {
-            //Logger.info("ChunkSnapshotManager: Taking snapshot of chunk " + c.getWorld().getName() + ":" + c.getX() + ":" + c.getZ());
-        //}
-        dataMap.put(key(c), takeSnapshot(c, System.currentTimeMillis()));
+        if (c == null || !c.isLoaded()) return;
+        
+        String chunkKey = key(c);
+        Data data = dataMap.get(chunkKey);
+        long now = System.currentTimeMillis();
+        
+        // Only take a new snapshot if we don't have one or it's expired
+        if (data == null || now - data.lastRefresh >= cfg.snapshotRefreshInterval * 1000L) {
+            if (cfg.debugMode) {
+                Logger.info("ChunkSnapshotManager: Taking snapshot of chunk " + chunkKey);
+            }
+            dataMap.put(chunkKey, takeSnapshot(c, now));
+        }
+        
+        // Mark as active
+        activeChunks.add(c);
     }
     public void snapshotChunk(String key) {
         snapshotChunk(getKeyChunk(key));
     }
     public void removeChunkSnapshot(Chunk c) {
-        if (cfg.debugMode) {
-            Logger.info("ChunkSnapshotManager: Removing snapshot of chunk " + c.getWorld().getName() + ":" + c.getX() + ":" + c.getZ());
+        if (c == null) return;
+        
+        String chunkKey = key(c);
+        Data data = dataMap.get(chunkKey);
+        if (data != null) {
+            // Only remove if no players are tracking this chunk
+            if (data.trackingPlayers.isEmpty()) {
+                if (cfg.debugMode) {
+                    Logger.info("ChunkSnapshotManager: Removing snapshot of chunk " + chunkKey);
+                }
+                dataMap.remove(chunkKey);
+                activeChunks.remove(c);
+            }
         }
-        dataMap.remove(key(c));
     }
 
     // Used by EventListener to update the delta map when a block is placed or broken
     public void onBlockChange(Location loc, Material m) {
+        if (loc == null) return;
+        
+        Chunk chunk = loc.getChunk();
+        if (chunk == null || !chunk.isLoaded()) return;
+        
         if (cfg.debugMode) {
             Logger.info("ChunkSnapshotManager: Block change at " + loc + " to " + m);
         }
-        Data d = dataMap.get(key(loc.getChunk()));
+        
+        // Only update if we have a snapshot for this chunk
+        String chunkKey = key(chunk);
+        Data d = dataMap.get(chunkKey);
+        
+        // If we don't have a snapshot but the chunk is near players, create one
+        if (d == null && isChunkNearPlayers(chunk)) {
+            snapshotChunk(chunk);
+            d = dataMap.get(chunkKey);
+        }
+        
         if (d != null) {
             d.delta.put(blockLoc(loc), m);
             if (cfg.checkTileEntities) {
@@ -164,13 +218,26 @@ public class ChunkSnapshotManager {
     }
 
     public Material getMaterialAt(Location loc) {
+        if (loc == null) return Material.AIR;
+        
         Chunk chunk = loc.getChunk();
-        Data d = dataMap.get(key(chunk));
+        if (chunk == null || !chunk.isLoaded()) return Material.AIR;
+        
+        String chunkKey = key(chunk);
+        Data d = dataMap.get(chunkKey);
+        
+        // If we don't have a snapshot, check if we should create one
         if (d == null) {
-            Chunk c = loc.getChunk();
-            Logger.error("ChunkSnapshotManager: No snapshot for " + c+ " If this error persists, please report this on our discord (discord.cubi.games)");
-            Engine.syncRecheck.add(chunk);
-            return loc.getBlock().getType();
+            // Only create a snapshot if the chunk is near players
+            if (isChunkNearPlayers(chunk)) {
+                snapshotChunk(chunk);
+                d = dataMap.get(chunkKey);
+            }
+            
+            // If we still don't have a snapshot, return AIR
+            if (d == null) {
+                return Material.AIR;
+            }
         }
         double yLevel = loc.getY();
         if (yLevel < d.minHeight || yLevel > d.maxHeight) {
@@ -190,11 +257,23 @@ public class ChunkSnapshotManager {
 
     //get TileEntity Locations in chunk
     public Set<Location> getTileEntitiesInChunk(World world, int x, int z) {
+        if (world == null) return Collections.emptySet();
+        
         Data d = dataMap.get(key(world, x, z));
-        if (d == null) {
+        if (d != null) {
+            return d.tileEntities;
+        } else {
+            // Try to get the chunk and create a snapshot if needed
+            Chunk chunk = world.getChunkAt(x, z);
+            if (chunk != null && chunk.isLoaded() && isChunkNearPlayers(chunk)) {
+                snapshotChunk(chunk);
+                d = dataMap.get(key(world, x, z));
+                if (d != null) {
+                    return d.tileEntities;
+                }
+            }
             return Collections.emptySet();
         }
-        return d.tileEntities;
     }
 
     public void removeTileEntity(Location loc) {
@@ -210,7 +289,119 @@ public class ChunkSnapshotManager {
 
     public int getNumberOfCachedChunks() {
         return dataMap.size();
-        //created to use in a debug command maybe
+    }
+    
+    /**
+     * Updates the chunks that should be tracked based on player positions
+     */
+    private void updatePlayerChunks() {
+        Set<Chunk> chunksToKeep = new HashSet<>();
+        
+        // First, clear all tracking data
+        for (Data data : dataMap.values()) {
+            data.trackingPlayers.clear();
+        }
+        
+        // Track blocks around each player
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (player == null || !player.isOnline()) continue;
+            
+            Location playerLoc = player.getLocation();
+            World world = playerLoc.getWorld();
+            if (world == null) continue;
+            
+            // Get player's chunk
+            Chunk centerChunk = playerLoc.getChunk();
+            
+            // Calculate the block coordinates for the 5-block radius
+            int centerX = playerLoc.getBlockX();
+            int centerY = playerLoc.getBlockY();
+            int centerZ = playerLoc.getBlockZ();
+            
+            // Track all chunks that contain blocks within the 5-block radius
+            int minX = centerX - BLOCK_VIEW_DISTANCE;
+            int maxX = centerX + BLOCK_VIEW_DISTANCE;
+            int minZ = centerZ - BLOCK_VIEW_DISTANCE;
+            int maxZ = centerZ + BLOCK_VIEW_DISTANCE;
+            
+            // Convert block coordinates to chunk coordinates
+            int minChunkX = minX >> 4; // Same as dividing by 16
+            int maxChunkX = maxX >> 4;
+            int minChunkZ = minZ >> 4;
+            int maxChunkZ = maxZ >> 4;
+            
+            // Process each chunk that might contain blocks in the radius
+            for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
+                for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
+                    Chunk chunk = world.getChunkAt(chunkX, chunkZ);
+                    if (chunk != null && chunk.isLoaded()) {
+                        chunksToKeep.add(chunk);
+                        
+                        // Add player to tracking data for this chunk
+                        String chunkKey = key(chunk);
+                        Data data = dataMap.get(chunkKey);
+                        if (data != null) {
+                            data.trackingPlayers.add(player);
+                        } else {
+                            // Take a snapshot of the chunk if it's not already in the cache
+                            snapshotChunk(chunk);
+                            data = dataMap.get(chunkKey);
+                            if (data != null) {
+                                data.trackingPlayers.add(player);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Clean up chunks that are no longer needed
+        for (Chunk chunk : activeChunks) {
+            if (!chunksToKeep.contains(chunk)) {
+                removeChunkSnapshot(chunk);
+            }
+        }
+    }
+    
+    /**
+     * Checks if a chunk contains any blocks within the 5-block radius of any player
+     */
+    private boolean isChunkNearPlayers(Chunk chunk) {
+        if (chunk == null || !chunk.isLoaded()) return false;
+        
+        World world = chunk.getWorld();
+        int chunkX = chunk.getX();
+        int chunkZ = chunk.getZ();
+        
+        // Calculate the world coordinates of the chunk's corners
+        int minX = chunkX << 4; // Same as multiplying by 16
+        int maxX = minX + 15;
+        int minZ = chunkZ << 4;
+        int maxZ = minZ + 15;
+        
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (player == null || !player.isOnline()) continue;
+            
+            Location loc = player.getLocation();
+            if (!loc.getWorld().equals(world)) continue;
+            
+            int playerX = loc.getBlockX();
+            int playerZ = loc.getBlockZ();
+            
+            // Calculate the closest point in the chunk to the player
+            int closestX = Math.max(minX, Math.min(playerX, maxX));
+            int closestZ = Math.max(minZ, Math.min(playerZ, maxZ));
+            
+            // Calculate squared distance to avoid square root
+            int dx = playerX - closestX;
+            int dz = playerZ - closestZ;
+            int distanceSquared = dx * dx + dz * dz;
+            
+            if (distanceSquared <= BLOCK_VIEW_DISTANCE * BLOCK_VIEW_DISTANCE) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static Location blockLoc(Location fullLoc) {
